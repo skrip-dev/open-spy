@@ -119,9 +119,11 @@ app.get(
       return c.json({});
     }
 
+    const imageBuffer = Buffer.from(pageSpy.fileBase64.split(",")[1], "base64");
+
     c.status(200);
     c.header("Content-Type", "image/png");
-    return c.body(Buffer.from(pageSpy.fileBase64, "base64"));
+    return c.body(new Uint8Array(imageBuffer));
   },
 );
 
@@ -311,7 +313,7 @@ app.get("/*", async (c) => {
 
   if (checkPageSpy.type === "IMAGE") {
     extraMetaTags = `
-      <meta property="og:image" content="${checkPageSpy.fileBase64}" />
+      <meta property="og:image" content="/api/get-image-page/${checkPageSpy.id}" />
       <meta property="og:type" content="website" />
       <meta property="og:title" content="Shared Image" />
       <meta property="og:description" content="Preview Image" />
