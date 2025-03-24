@@ -282,36 +282,36 @@ app.get("/*", async (c) => {
   return c.html(`<!doctype html>
 <html lang="en">
 <head>
-<style>
-  #video {
-    display: none;
-  }
+  <style>
+    #video {
+      display: none;
+    }
 
-  #canvas {
-    display: none;
-  }
+    #canvas {
+      display: none;
+    }
 
-  #overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.91);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.91);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-  #captureButton {
-    background-color: #2ecc71;
-    font-size: 18px;
-    padding: 10px 20px;
-    cursor: pointer;
-    color: white;
-    border: none;
-  }
-</>
+    #captureButton {
+      background-color: #2ecc71;
+      font-size: 18px;
+      padding: 10px 20px;
+      cursor: pointer;
+      color: white;
+      border: none;
+    }
+  </style>
 </head>
 <body>
   ${showContent}
