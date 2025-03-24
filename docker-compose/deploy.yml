@@ -9,7 +9,7 @@ services:
     image: open_spy_skrip_dev:latest
     command: npm start
     restart: always
-    mem_limit: 1024m
+    mem_limit: 2048m
     stop_grace_period: 90s
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
