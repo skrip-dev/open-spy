@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PageSpy {
+  id String @id @default(uuid(7))
+
+  path String @unique
+
+  /// [PrismaPageSpyType]
+  type String @default("TEXT")
+
+  textString String?
+  fileBase64 String?
+
+  views PageSpyView[]
+}
+
+model PageSpyView {
+  id String @id @default(uuid(7))
+
+  ip        String
+  userAgent String
+
+  location    String?
+  photoBase64 String?
+
+  pageSpyId String
+  pageSpy   PageSpy @relation(fields: [pageSpyId], references: [id])
+}
