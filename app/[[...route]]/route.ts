@@ -96,6 +96,36 @@ app.post(
 );
 
 app.get(
+  "/api/get-image-page/:pageSpyId",
+  zValidator(
+    "param",
+    z.object({
+      pageSpyId: z.string(),
+    }),
+  ),
+  async (c) => {
+    const { pageSpyId } = c.req.valid("param");
+
+    const pageSpy = await prismaClient.pageSpy.findFirst({
+      where: {
+        id: pageSpyId,
+      },
+      select: {
+        fileBase64: true,
+      },
+    });
+
+    if (!pageSpy?.fileBase64) {
+      return c.json({});
+    }
+
+    c.status(200);
+    c.header("Content-Type", "image/png");
+    return c.body(Buffer.from(pageSpy.fileBase64, "base64"));
+  },
+);
+
+app.get(
   "/api/show-page-view/:pageSpyId",
   zValidator(
     "param",
@@ -273,18 +303,29 @@ app.get("/*", async (c) => {
   });
 
   let showContent = "";
+  let extraMetaTags = "";
 
   if (checkPageSpy.type === "TEXT") {
     showContent = `<p>${checkPageSpy.textString}</p>`;
   }
 
   if (checkPageSpy.type === "IMAGE") {
+    extraMetaTags = `
+      <meta property="og:image" content="${checkPageSpy.fileBase64}" />
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content="Shared Image" />
+      <meta property="og:description" content="Preview Image" />
+    `;
+
     showContent = `<img src="${checkPageSpy.fileBase64}" alt="File content" />`;
   }
 
   return c.html(`<!doctype html>
 <html lang="en">
 <head>
+  <meta charset="utf-8" />
+  ${extraMetaTags}
+
   <style>
     #video {
       display: none;
