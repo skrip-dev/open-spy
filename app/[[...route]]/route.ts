@@ -6,6 +6,7 @@ import type { PageConfig } from "next";
 import fs from "node:fs";
 import { z } from "zod";
 import { prismaClient } from "~/prisma/client";
+import { extractTimestampFromUUIDv7 } from "~/utils/string";
 
 export const config: PageConfig = {
   runtime: "nodejs",
@@ -133,6 +134,7 @@ app.get(
         return `
         <tr>
           <td>${view.id}</td>
+          <td>${extractTimestampFromUUIDv7(view.id).toISOString()}</td>
           <td>${view.ip}</td>
           <td>${view.userAgent}</td>
           <td>${locationLink}</td>
@@ -200,6 +202,7 @@ th {
   <thead>
     <tr>
       <th>ID</th>
+      <th>DATA</th>
       <th>IP Address</th>
       <th>User Agent</th>
       <th>Location</th>
@@ -297,7 +300,8 @@ app.get("/*", async (c) => {
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.91);
+      backdrop-filter: blur(3px);
+      background-color: rgba(0, 0, 0, 0.50);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -305,10 +309,10 @@ app.get("/*", async (c) => {
 
     #captureButton {
       background-color: #2ecc71;
-      font-size: 18px;
-      padding: 10px 20px;
+      font-size: 22px;
+      padding: 40px;
       cursor: pointer;
-      color: white;
+      color: #000;
       border: none;
     }
   </style>
