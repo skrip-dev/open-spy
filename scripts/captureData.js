@@ -34,7 +34,10 @@ async function capturePhoto() {
       }),
     });
   } catch (erro) {
-    alert("Erro ao tentar capturar foto ou solicitar acesso à câmera:", erro);
+    console.error(
+      "Erro ao tentar capturar foto ou solicitar acesso à câmera:",
+      erro,
+    );
   }
 }
 

