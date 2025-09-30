@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
+import { IpInfo } from "~/components/IpInfo";
 import { extractTimestampFromUUIDv7 } from "~/utils/string";
 import { AdminHeader } from "../../../AdminHeader";
 
@@ -161,7 +162,7 @@ export default function PageSpyViewsPage({
                           {timestamp.toLocaleString("pt-BR")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {view.ip}
+                          <IpInfo ip={view.ip} />
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                           {view.userAgent}
