@@ -597,7 +597,7 @@ app.post(
     "json",
     z.object({
       name: z.string().min(1, "Nome obrigatório"),
-      email: z.string().email("Email inválido"),
+      email: z.email("Email inválido"),
       password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
     }),
   ),
@@ -649,7 +649,7 @@ app.put(
     "json",
     z.object({
       name: z.string().min(1, "Nome obrigatório").optional(),
-      email: z.string().email("Email inválido").optional(),
+      email: z.email("Email inválido").optional(),
     }),
   ),
   async (c) => {
