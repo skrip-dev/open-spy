@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { extractTimestampFromUUIDv7 } from "~/utils/string";
-import { AdminHeader } from "../../AdminHeader";
+import { AdminHeader } from "../../../AdminHeader";
 
 interface PageSpyView {
   id: string;
@@ -58,7 +58,7 @@ export default function PageSpyViewsPage({
     } catch (error) {
       console.error("Error fetching views:", error);
       alert("Erro ao carregar visualizações");
-      router.push("/admin/page-spy");
+      router.push("/admin/dashboard/page-spy");
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export default function PageSpyViewsPage({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <button
-            onClick={() => router.push("/admin/page-spy")}
+            onClick={() => router.push("/admin/dashboard/page-spy")}
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
           >
             <svg

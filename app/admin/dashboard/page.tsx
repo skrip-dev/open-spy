@@ -15,7 +15,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link
-            href="/admin/page-spy"
+            href="/admin/dashboard/page-spy"
             className="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center mb-4">

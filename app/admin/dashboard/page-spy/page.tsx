@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { enumPageSpyTranslation, enumPageSpyType } from "~/prisma/enumMap";
-import { AdminHeader } from "../AdminHeader";
+import { AdminHeader } from "../../AdminHeader";
 
 interface PageSpy {
   id: string;
@@ -385,7 +385,7 @@ export default function PageSpyManagementPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <button
                         onClick={() =>
-                          router.push(`/admin/page-spy/${item.id}`)
+                          router.push(`/admin/dashboard/page-spy/${item.id}`)
                         }
                         className="text-blue-600 hover:text-blue-900"
                       >
