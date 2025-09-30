@@ -23,7 +23,7 @@ export function AdminHeader() {
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
-    router.push("/admin/login");
+    router.push("/admin");
   };
 
   if (!user) return null;
