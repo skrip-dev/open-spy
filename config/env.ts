@@ -9,8 +9,8 @@ const envSchema = z.object({
   FIRST_ADMIN_EMAIL: z.email(),
 
   // JWT Configuration
-  JWT_PRIVATE_KEY: z.string(),
-  JWT_PUBLIC_KEY: z.string(),
+  JWT_PRIVATE_KEY: z.string().transform((value) => value.replace(/\\n/g, "\n")),
+  JWT_PUBLIC_KEY: z.string().transform((value) => value.replace(/\\n/g, "\n")),
 });
 
 export const env = envSchema.parse(process.env);
