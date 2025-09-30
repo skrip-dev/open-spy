@@ -4,7 +4,7 @@ import { raw } from "hono/html";
 import { handle } from "hono/vercel";
 import type { PageConfig } from "next";
 import fs from "node:fs";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { prismaClient } from "~/prisma/client";
 import { extractTimestampFromUUIDv7 } from "~/utils/string";
 
