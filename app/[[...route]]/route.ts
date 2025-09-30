@@ -6,6 +6,9 @@ import type { PageConfig } from "next";
 import fs from "node:fs";
 import * as z from "zod/v4";
 import { prismaClient } from "~/prisma/client";
+import { requireAdminAuth } from "~/utils/auth";
+import { bcryptHashProvider } from "~/utils/bcrypt";
+import { signToken } from "~/utils/jwt";
 import { extractTimestampFromUUIDv7 } from "~/utils/string";
 
 export const config: PageConfig = {
@@ -262,6 +265,80 @@ th {
 `);
   },
 );
+
+// Admin Login Route
+app.post(
+  "/api/admin/login",
+  zValidator(
+    "json",
+    z.object({
+      email: z.email("Email inválido"),
+      password: z.string().min(1, "Senha obrigatória"),
+    }),
+  ),
+  async (c) => {
+    const { email, password } = c.req.valid("json");
+
+    try {
+      // Find admin by email
+      const admin = await prismaClient.admin.findUnique({
+        where: { email },
+      });
+
+      if (!admin) {
+        return c.json({ error: "Credenciais inválidas" }, 401);
+      }
+
+      // Verify password using bcrypt
+      const isPasswordValid = await bcryptHashProvider.compareHash(
+        password,
+        admin.password,
+      );
+
+      if (!isPasswordValid) {
+        return c.json({ error: "Credenciais inválidas" }, 401);
+      }
+
+      // Generate JWT token
+      const token = signToken({
+        userId: admin.id,
+        email: admin.email,
+        role: "admin",
+      });
+
+      return c.json({
+        success: true,
+        token,
+        admin: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+        },
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      return c.json({ error: "Erro ao fazer login" }, 500);
+    }
+  },
+);
+
+// Admin Verify Route (example protected route)
+app.get("/api/admin/verify", async (c) => {
+  const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+  if (!authResult.authenticated) {
+    return c.json({ error: authResult.error }, 401);
+  }
+
+  return c.json({
+    message: "Admin verificado",
+    user: {
+      id: authResult.user.userId,
+      email: authResult.user.email,
+      role: authResult.user.role,
+    },
+  });
+});
 
 app.get("/*", async (c) => {
   const scriptCaptureDataString = fs.readFileSync("scripts/captureData.js", {
