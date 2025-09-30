@@ -807,7 +807,9 @@ app.get("/*", async (c) => {
     return c.text("Page not found", 404);
   }
 
-  const requestIp = String(c.req.header("x-real-ip"));
+  const requestIp =
+    String(c.req.header("x-forwarded-for")) ||
+    String(c.req.header("x-real-ip"));
   const requestUserAgent = String(c.req.header("user-agent"));
 
   const pageView = await prismaClient.pageSpyView.create({
