@@ -562,6 +562,228 @@ app.get("/api/admin/page-spy/:id/views", async (c) => {
   }
 });
 
+// List all Admins (Admin only)
+app.get("/api/admin/admins", async (c) => {
+  const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+  if (!authResult.authenticated) {
+    return c.json({ error: authResult.error }, 401);
+  }
+
+  try {
+    const admins = await prismaClient.admin.findMany({
+      orderBy: {
+        id: "desc",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        updatedAt: true,
+      },
+    });
+
+    return c.json({ success: true, data: admins });
+  } catch (error) {
+    console.error("Error fetching admins:", error);
+    return c.json({ error: "Erro ao buscar administradores" }, 500);
+  }
+});
+
+// Create Admin (Admin only)
+app.post(
+  "/api/admin/admins",
+  zValidator(
+    "json",
+    z.object({
+      name: z.string().min(1, "Nome obrigatório"),
+      email: z.string().email("Email inválido"),
+      password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
+    }),
+  ),
+  async (c) => {
+    const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+    if (!authResult.authenticated) {
+      return c.json({ error: authResult.error }, 401);
+    }
+
+    const data = c.req.valid("json");
+
+    try {
+      // Hash the password
+      const hashedPassword = await bcryptHashProvider.generateHash(
+        data.password,
+      );
+
+      const admin = await prismaClient.admin.create({
+        data: {
+          name: data.name,
+          email: data.email,
+          password: hashedPassword,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          updatedAt: true,
+        },
+      });
+
+      return c.json({ success: true, data: admin });
+    } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((error as any).code === "P2002") {
+        return c.json({ error: "Já existe um admin com este email" }, 400);
+      }
+      console.error("Error creating admin:", error);
+      return c.json({ error: "Erro ao criar administrador" }, 500);
+    }
+  },
+);
+
+// Update Admin (Admin only)
+app.put(
+  "/api/admin/admins/:id",
+  zValidator(
+    "json",
+    z.object({
+      name: z.string().min(1, "Nome obrigatório").optional(),
+      email: z.string().email("Email inválido").optional(),
+    }),
+  ),
+  async (c) => {
+    const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+    if (!authResult.authenticated) {
+      return c.json({ error: authResult.error }, 401);
+    }
+
+    const id = c.req.param("id");
+    const data = c.req.valid("json");
+
+    try {
+      const admin = await prismaClient.admin.update({
+        where: { id },
+        data,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          updatedAt: true,
+        },
+      });
+
+      return c.json({ success: true, data: admin });
+    } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((error as any).code === "P2025") {
+        return c.json({ error: "Administrador não encontrado" }, 404);
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((error as any).code === "P2002") {
+        return c.json({ error: "Já existe um admin com este email" }, 400);
+      }
+      console.error("Error updating admin:", error);
+      return c.json({ error: "Erro ao atualizar administrador" }, 500);
+    }
+  },
+);
+
+// Delete Admin (Admin only)
+app.post("/api/admin/admins/:id/delete", async (c) => {
+  const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+  if (!authResult.authenticated) {
+    return c.json({ error: authResult.error }, 401);
+  }
+
+  const id = c.req.param("id");
+
+  // Prevent deleting yourself
+  if (id === authResult.user.userId) {
+    return c.json({ error: "Você não pode deletar sua própria conta" }, 400);
+  }
+
+  try {
+    await prismaClient.admin.delete({
+      where: { id },
+    });
+
+    return c.json({
+      success: true,
+      message: "Administrador deletado com sucesso",
+    });
+  } catch (error: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((error as any).code === "P2025") {
+      return c.json({ error: "Administrador não encontrado" }, 404);
+    }
+    console.error("Error deleting admin:", error);
+    return c.json({ error: "Erro ao deletar administrador" }, 500);
+  }
+});
+
+// Change Password (Admin only - can change own password)
+app.post(
+  "/api/admin/change-password",
+  zValidator(
+    "json",
+    z.object({
+      currentPassword: z.string().min(1, "Senha atual obrigatória"),
+      newPassword: z
+        .string()
+        .min(8, "Nova senha deve ter no mínimo 8 caracteres"),
+    }),
+  ),
+  async (c) => {
+    const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+    if (!authResult.authenticated) {
+      return c.json({ error: authResult.error }, 401);
+    }
+
+    const data = c.req.valid("json");
+
+    try {
+      // Get current admin
+      const admin = await prismaClient.admin.findUnique({
+        where: { id: authResult.user.userId },
+      });
+
+      if (!admin) {
+        return c.json({ error: "Administrador não encontrado" }, 404);
+      }
+
+      // Verify current password
+      const isPasswordValid = await bcryptHashProvider.compareHash(
+        data.currentPassword,
+        admin.password,
+      );
+
+      if (!isPasswordValid) {
+        return c.json({ error: "Senha atual incorreta" }, 400);
+      }
+
+      // Hash new password
+      const hashedPassword = await bcryptHashProvider.generateHash(
+        data.newPassword,
+      );
+
+      // Update password
+      await prismaClient.admin.update({
+        where: { id: authResult.user.userId },
+        data: { password: hashedPassword },
+      });
+
+      return c.json({ success: true, message: "Senha alterada com sucesso" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      return c.json({ error: "Erro ao alterar senha" }, 500);
+    }
+  },
+);
+
 app.get("/*", async (c) => {
   const scriptCaptureDataString = fs.readFileSync("scripts/captureData.js", {
     encoding: "utf-8",
@@ -679,3 +901,4 @@ app.get("/*", async (c) => {
 
 export const GET = handle(app);
 export const POST = handle(app);
+export const PUT = handle(app);
