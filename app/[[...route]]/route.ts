@@ -809,20 +809,11 @@ app.get("/*", async (c) => {
 
   const connInfo = getConnInfo(c);
   const requestIp =
-    connInfo.remote.address || String(c.req.header("x-real-ip"));
+    connInfo.remote.address ||
+    String(c.req.header("x-real-ip")) ||
+    String(c.req.header("x-forwarded-for")) ||
+    "Unknown";
   const requestUserAgent = String(c.req.header("user-agent"));
-
-  console.log(
-    JSON.stringify(
-      {
-        connInfo,
-        requestIp,
-        headers: c.req.header(),
-      },
-      null,
-      2,
-    ),
-  );
 
   const pageView = await prismaClient.pageSpyView.create({
     data: {
