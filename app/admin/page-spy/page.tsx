@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { enumPageSpyTranslation, enumPageSpyType } from "~/prisma/enumMap";
 import { AdminHeader } from "../AdminHeader";
@@ -16,6 +17,7 @@ interface PageSpy {
 }
 
 export default function PageSpyManagementPage() {
+  const router = useRouter();
   const [pageSpies, setPageSpies] = useState<PageSpy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -330,7 +332,14 @@ export default function PageSpyManagementPage() {
                       }
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item._count.views}
+                      <button
+                        onClick={() =>
+                          router.push(`/admin/page-spy/${item.id}`)
+                        }
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        {item._count.views} visualizações
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button

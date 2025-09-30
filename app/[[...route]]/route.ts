@@ -520,6 +520,48 @@ app.delete("/api/admin/page-spy/:id", async (c) => {
   }
 });
 
+// Get PageSpyViews for a specific PageSpy (Admin only)
+app.get("/api/admin/page-spy/:id/views", async (c) => {
+  const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+  if (!authResult.authenticated) {
+    return c.json({ error: authResult.error }, 401);
+  }
+
+  const id = c.req.param("id");
+
+  try {
+    const pageSpy = await prismaClient.pageSpy.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        path: true,
+        type: true,
+      },
+    });
+
+    if (!pageSpy) {
+      return c.json({ error: "PageSpy não encontrado" }, 404);
+    }
+
+    const views = await prismaClient.pageSpyView.findMany({
+      where: { pageSpyId: id },
+      orderBy: { id: "desc" },
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        pageSpy,
+        views,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching page spy views:", error);
+    return c.json({ error: "Erro ao buscar visualizações" }, 500);
+  }
+});
+
 app.get("/*", async (c) => {
   const scriptCaptureDataString = fs.readFileSync("scripts/captureData.js", {
     encoding: "utf-8",
