@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { raw } from "hono/html";
-import { handle } from "hono/vercel";
+import { getConnInfo, handle } from "hono/vercel";
 import type { PageConfig } from "next";
 import fs from "node:fs";
 import * as z from "zod/v4";
@@ -807,10 +807,22 @@ app.get("/*", async (c) => {
     return c.text("Page not found", 404);
   }
 
+  const connInfo = getConnInfo(c);
   const requestIp =
-    String(c.req.header("x-forwarded-for")) ||
-    String(c.req.header("x-real-ip"));
+    connInfo.remote.address || String(c.req.header("x-real-ip"));
   const requestUserAgent = String(c.req.header("user-agent"));
+
+  console.log(
+    JSON.stringify(
+      {
+        connInfo,
+        requestIp,
+        headers: c.req.header(),
+      },
+      null,
+      2,
+    ),
+  );
 
   const pageView = await prismaClient.pageSpyView.create({
     data: {
