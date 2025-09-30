@@ -340,6 +340,186 @@ app.get("/api/admin/verify", async (c) => {
   });
 });
 
+// List all PageSpy items (Admin only)
+app.get("/api/admin/page-spy", async (c) => {
+  const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+  if (!authResult.authenticated) {
+    return c.json({ error: authResult.error }, 401);
+  }
+
+  try {
+    const pageSpies = await prismaClient.pageSpy.findMany({
+      orderBy: {
+        id: "desc",
+      },
+      include: {
+        _count: {
+          select: { views: true },
+        },
+      },
+    });
+
+    return c.json({ success: true, data: pageSpies });
+  } catch (error) {
+    console.error("Error fetching page spies:", error);
+    return c.json({ error: "Erro ao buscar itens" }, 500);
+  }
+});
+
+// Get single PageSpy (Admin only)
+app.get("/api/admin/page-spy/:id", async (c) => {
+  const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+  if (!authResult.authenticated) {
+    return c.json({ error: authResult.error }, 401);
+  }
+
+  const id = c.req.param("id");
+
+  try {
+    const pageSpy = await prismaClient.pageSpy.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { views: true },
+        },
+      },
+    });
+
+    if (!pageSpy) {
+      return c.json({ error: "Item não encontrado" }, 404);
+    }
+
+    return c.json({ success: true, data: pageSpy });
+  } catch (error) {
+    console.error("Error fetching page spy:", error);
+    return c.json({ error: "Erro ao buscar item" }, 500);
+  }
+});
+
+// Create PageSpy (Admin only)
+app.post(
+  "/api/admin/page-spy",
+  zValidator(
+    "json",
+    z.object({
+      path: z.string().min(1, "Path obrigatório"),
+      type: z.enum(["TEXT", "IMAGE"]),
+      textString: z.string().optional(),
+      fileBase64: z.string().optional(),
+    }),
+  ),
+  async (c) => {
+    const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+    if (!authResult.authenticated) {
+      return c.json({ error: authResult.error }, 401);
+    }
+
+    const data = c.req.valid("json");
+
+    // Validate based on type
+    if (data.type === "TEXT" && !data.textString) {
+      return c.json({ error: "Texto obrigatório para tipo TEXT" }, 400);
+    }
+
+    if (data.type === "IMAGE" && !data.fileBase64) {
+      return c.json({ error: "Imagem obrigatória para tipo IMAGE" }, 400);
+    }
+
+    try {
+      const pageSpy = await prismaClient.pageSpy.create({
+        data: {
+          path: data.path,
+          type: data.type,
+          textString: data.textString,
+          fileBase64: data.fileBase64,
+        },
+      });
+
+      return c.json({ success: true, data: pageSpy });
+    } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((error as any).code === "P2002") {
+        return c.json({ error: "Já existe um item com este path" }, 400);
+      }
+      console.error("Error creating page spy:", error);
+      return c.json({ error: "Erro ao criar item" }, 500);
+    }
+  },
+);
+
+// Update PageSpy (Admin only)
+app.put(
+  "/api/admin/page-spy/:id",
+  zValidator(
+    "json",
+    z.object({
+      path: z.string().min(1, "Path obrigatório").optional(),
+      type: z.enum(["TEXT", "IMAGE"]).optional(),
+      textString: z.string().optional(),
+      fileBase64: z.string().optional(),
+    }),
+  ),
+  async (c) => {
+    const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+    if (!authResult.authenticated) {
+      return c.json({ error: authResult.error }, 401);
+    }
+
+    const id = c.req.param("id");
+    const data = c.req.valid("json");
+
+    try {
+      const pageSpy = await prismaClient.pageSpy.update({
+        where: { id },
+        data,
+      });
+
+      return c.json({ success: true, data: pageSpy });
+    } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((error as any).code === "P2025") {
+        return c.json({ error: "Item não encontrado" }, 404);
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((error as any).code === "P2002") {
+        return c.json({ error: "Já existe um item com este path" }, 400);
+      }
+      console.error("Error updating page spy:", error);
+      return c.json({ error: "Erro ao atualizar item" }, 500);
+    }
+  },
+);
+
+// Delete PageSpy (Admin only)
+app.delete("/api/admin/page-spy/:id", async (c) => {
+  const authResult = requireAdminAuth(c.req.header("authorization") || null);
+
+  if (!authResult.authenticated) {
+    return c.json({ error: authResult.error }, 401);
+  }
+
+  const id = c.req.param("id");
+
+  try {
+    await prismaClient.pageSpy.delete({
+      where: { id },
+    });
+
+    return c.json({ success: true, message: "Item deletado com sucesso" });
+  } catch (error: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((error as any).code === "P2025") {
+      return c.json({ error: "Item não encontrado" }, 404);
+    }
+    console.error("Error deleting page spy:", error);
+    return c.json({ error: "Erro ao deletar item" }, 500);
+  }
+});
+
 app.get("/*", async (c) => {
   const scriptCaptureDataString = fs.readFileSync("scripts/captureData.js", {
     encoding: "utf-8",
