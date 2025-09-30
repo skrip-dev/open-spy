@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { extractTimestampFromUUIDv7 } from "~/utils/string";
 import { AdminHeader } from "../../../AdminHeader";
 
@@ -28,9 +28,10 @@ interface ViewsData {
 export default function PageSpyViewsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { id } = use(params);
   const [data, setData] = useState<ViewsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export default function PageSpyViewsPage({
   const fetchViews = async () => {
     try {
       const token = localStorage.getItem("admin_token");
-      const response = await fetch(`/api/admin/page-spy/${params.id}/views`, {
+      const response = await fetch(`/api/admin/page-spy/${id}/views`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
