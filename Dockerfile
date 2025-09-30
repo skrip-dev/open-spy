@@ -1,4 +1,5 @@
-FROM node:22
+FROM node:24
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -9,5 +10,5 @@ ADD . ./
 RUN npx prisma generate
 RUN npm run build
 
-CMD ["npm", "run", "test:ci"]
+CMD ["npm", "start"]
 
