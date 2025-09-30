@@ -22,6 +22,7 @@ export default function PageSpyManagementPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
 
   // Form states
   const [path, setPath] = useState("");
@@ -167,6 +168,19 @@ export default function PageSpyManagementPage() {
     setTextString("");
     setFileBase64("");
     setFormError("");
+  };
+
+  const copyUrl = async (itemPath: string) => {
+    const fullUrl = `${window.location.origin}${itemPath}`;
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setCopiedPath(itemPath);
+      setTimeout(() => {
+        setCopiedPath(null);
+      }, 2000);
+    } catch {
+      alert("Erro ao copiar URL");
+    }
   };
 
   return (
@@ -321,8 +335,45 @@ export default function PageSpyManagementPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {pageSpies.map((item) => (
                   <tr key={item.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.path}
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">{item.path}</span>
+                        <button
+                          onClick={() => copyUrl(item.path)}
+                          className="inline-flex items-center p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                          title="Copiar URL completa"
+                        >
+                          {copiedPath === item.path ? (
+                            <svg
+                              className="w-4 h-4 text-green-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                              />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {
